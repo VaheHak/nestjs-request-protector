@@ -34,8 +34,7 @@ npm install nestjs-request-protector
 ```ts
 import { Module } from '@nestjs/common';
 import { APP_GUARD } from '@nestjs/core';
-import { RequestProtectorModule, RequestProtectorGuard } from 'nestjs-request-protector';
-import { RequestProtectorOptions } from 'nestjs-request-protector/interfaces/request-protector-options.interface';
+import { RequestProtectorModule, RequestProtectorGuard, RequestProtectorOptions } from 'nestjs-request-protector';
 
 const protectorOptions: RequestProtectorOptions = {
   allowedDeviceTokens: ['device123', 'device456'],
@@ -74,10 +73,7 @@ This approach allows **dependency injection** for your configuration.
 ```ts
 import { Module } from '@nestjs/common';
 import { APP_GUARD } from '@nestjs/core';
-import { RequestProtectorGuard } from 'nestjs-request-protector';
-import { RequestProtectorOptions } from 'nestjs-request-protector/interfaces/request-protector-options.interface';
-
-export const REQUEST_PROTECTOR_OPTIONS = 'REQUEST_PROTECTOR_OPTIONS';
+import { RequestProtectorGuard, RequestProtectorOptions, REQUEST_PROTECTOR_OPTIONS } from 'nestjs-request-protector';
 
 const requestProtectorOptions: RequestProtectorOptions = {
   allowedDeviceTokens: ['secure123'],
@@ -114,8 +110,7 @@ This is simplest when options are static and you don’t need DI.
 ```ts
 import { Module } from '@nestjs/common';
 import { APP_GUARD } from '@nestjs/core';
-import { RequestProtectorGuard } from 'nestjs-request-protector';
-import { RequestProtectorOptions } from 'nestjs-request-protector/interfaces/request-protector-options.interface';
+import { RequestProtectorGuard, RequestProtectorOptions } from 'nestjs-request-protector';
 
 const requestProtectorOptions: RequestProtectorOptions = {
   allowedDeviceTokens: ['device123', 'device456'],
@@ -144,16 +139,18 @@ export class AppModule {}
 
 `allowedPlatforms` lets you control access by detected platform or User-Agent flags.
 
-| Category | Type | Supported Keywords | Description |
-|-----------|------|--------------------|--------------|
-| **browser** | `boolean` / `string[]` | `chrome`, `firefox`, `safari`, `edge`, `opera`, `ie`, `konqueror`, `omniweb`, `seamonkey`, `flock`, `amaya`, `epiphany` | Allow all or specific browsers |
-| **mobile** | `boolean` / `string[]` | `iphone`, `ipod`, `ipad`, `android`, `androidtablet`, `windowsphone`, `bada`, `samsung`, `kindlefire`, `silk` | Control mobile access |
-| **tablet** | `boolean` / `string[]` | `ipad`, `androidtablet` | Allow or block tablets |
-| **desktop** | `boolean` / `string[]` | `windows`, `mac`, `linux`, `chromeos`, `raspberry` | Control desktop systems |
-| **scripts** | `boolean` / `string[]` | `curl`, `wget`, `axios`, `nodefetch`, `pythonrequests`, `powershell` | Allow or block specific script-based clients |
-| **smartTV** | `boolean` | — | Allow Smart-TV devices |
-| **bots** | `boolean` | — | Allow web crawlers |
-| **customs** | `string[]` | Any substring (e.g., `myiotclient`) | Allow custom UA patterns |
+| **Category**       | **Type**                     | **Supported Keywords**                                                                                                                                                                                                                                                                                      | **Description**                                                   |
+| ------------------ | ---------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------- |
+| 🧭**browser**      | `boolean` / `Browser[]`      | `chrome`, `firefox`, `safari`, `edge`, `opera`, `ie`, `konqueror`, `omniweb`, `seamonkey`, `flock`, `amaya`, `epiphany`                                                                                                                                                                                     | Controls which desktop or mobile browsers are allowed             |
+| 📱**mobile**       | `boolean` / `Mobile[]`       | `iphone`, `ipod`, `ipad`, `android`, `androidtablet`, `windowsphone`, `bada`, `samsung`, `kindlefire`, `silk`                                                                                                                                                                                               | Controls mobile or handheld devices                               |
+| 💻**tablet**       | `boolean` / `Tablet[]`       | `ipad`, `androidtablet`, `kindle`, `windowstablet`                                                                                                                                                                                                                                                          | Controls tablet devices                                           |
+| 🖥**desktop**      | `boolean` / `Desktop[]`      | `windows`, `mac`, `linux`, `chromeos`, `raspberry`                                                                                                                                                                                                                                                          | Controls desktop or laptop OS platforms                           |
+| 🧠**smartGadgets** | `boolean` / `SmartGadgets[]` | `alexa`, `googlehome`, `echo`, `nest`, `smarthub`, `iot`                                                                                                                                                                                                                                                    | Controls smart home and IoT devices (Alexa, Google Home, etc.)    |
+| 🎮**gameConsoles** | `boolean` / `GameConsoles[]` | `playstation`, `xbox`, `nintendo`, `switch`, `wii`, `ps5`, `ps4`                                                                                                                                                                                                                                            | Controls console-based access (PlayStation, Xbox, Nintendo, etc.) |
+| 🤖**bots**         | `boolean` / `Bots[]`         | `googlebot`, `bingbot`, `duckduckbot`, `yandexbot`, `telegrambot`, `facebookbot`, `whatsappbot`, `discordbot`, `slackbot`, `linkedinbot`, `twitterbot`, `applebot`, `pinterestbot`, `yahoo-slurp`, `baiduspider`, `exabot`, `ahrefsbot`, `semrushbot`, `accoona`, `gptbot`, `oai-searchbot`, `chatgpt-user` | Allows or blocks crawlers, social bots, or AI preview agents      |
+| ⚙️**scripts**      | `boolean` / `Scripts[]`      | `curl`, `wget`, `postman`, `httpie`, `powershell`, `java`, `go-http-client`, `php`, `ruby`, `perl`, `python-requests`, `python-httpx`, `urllib`, `aiohttp`, `axios`, `node-fetch`, `superagent`, `got`, `okhttp`, `apache-httpclient`, `unity`                                                              | Controls CLI tools and HTTP libraries                             |
+| 📺**smartTV**      | `boolean`                    | —                                                                                                                                                                                                                                                                                                           | Allow Smart TV devices                                            |
+| 🧩**customs**      | `string[]`                   | Any substring (e.g., `myiotclient`, `trustedapp`)                                                                                                                                                                                                                                                           | Add your own trusted clients or devices                           |
 
 ---
 
@@ -173,6 +170,8 @@ const options: RequestProtectorOptions = {
     smartTV: false,
     bots: false,
     scripts: false,
+    gameConsoles: false,
+    smartGadgets: false,
     customs: ['trustedclient'],
   },
 };

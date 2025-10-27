@@ -2,5 +2,8 @@ src/
 node_modules/
 *.ts
 tsconfig.json
+.idea/
+.github/
+.gitignore
 
 !dist/**

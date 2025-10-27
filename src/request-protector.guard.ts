@@ -10,8 +10,9 @@ import {Request} from 'express';
 import {
   RequestProtectorOptions,
   IAllowedPlatforms,
-  IScriptedClient,
+  Bots, Browser, Mobile, Tablet, Desktop, Scripts, SmartGadgets, GameConsoles,
 } from './interfaces/request-protector-options.interface';
+import {DetectPlatform} from "./heplers/detect-platform";
 
 export const REQUEST_PROTECTOR_OPTIONS = 'REQUEST_PROTECTOR_OPTIONS';
 
@@ -23,62 +24,16 @@ export class RequestProtectorGuard implements CanActivate {
   ) {
   }
 
-  private detectScripts(uaString: string): IScriptedClient {
-    const ua = uaString.toLowerCase();
-    return {
-      isCurl: ua.includes('curl'),
-      isWget: ua.includes('wget'),
-      isAxios: ua.includes('axios'),
-      isNodeFetch: ua.includes('node-fetch'),
-      isPythonRequests: ua.includes('python-requests'),
-      isPowerShell: ua.includes('powershell') || ua.includes('winhttp'),
-    };
-  }
-
-  private checkAllow<T extends Record<string, boolean>>(
-    setting: boolean | string[] | undefined,
-    values: T,
-    isAllowed?: boolean
-  ): boolean {
-    if (setting === true) return isAllowed || Object.values(values).some(Boolean);
-    if (Array.isArray(setting))
-      return setting.some(k => values[k.toLowerCase() as keyof T]);
-    return false;
-  }
-
-
-  private async isAuthorizedDevice(deviceToken?: string): Promise<boolean> {
-    if (!this.options.allowedDeviceTokens || this.options.allowedDeviceTokens === '*') {
-      return true;
-    }
-
-    let allowedTokens = [...this.options.allowedDeviceTokens];
-    if (this.options.fetchAllowedTokens) {
-      try {
-        const fetched = await this.options.fetchAllowedTokens();
-        allowedTokens = [...allowedTokens, ...fetched];
-      } catch (err) {
-        console.error('Error fetching allowed tokens:', err);
-      }
-    }
-
-    return typeof deviceToken === 'string' && allowedTokens.includes(deviceToken);
-  }
-
-  private isClientAllowed(clientName?: string): boolean {
-    if (!this.options.allowedClients || this.options.allowedClients === '*') {
-      return true;
-    }
-
-    return !!clientName && this.options.allowedClients.includes(clientName);
-  }
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const req = context.switchToHttp().getRequest<Request>();
     const uaRaw = req.headers['user-agent'] || '';
     const ua = {
       ...useragent.parse(uaRaw),
-      ...this.detectScripts(uaRaw),
+      ...DetectPlatform.detectTablets(uaRaw),
+      ...DetectPlatform.detectScripts(uaRaw),
+      ...DetectPlatform.detectBots(uaRaw),
+      ...DetectPlatform.detectGadgets(uaRaw),
     };
     const uaSource = ua.source?.toLowerCase() || '';
 
@@ -86,14 +41,15 @@ export class RequestProtectorGuard implements CanActivate {
     const deviceToken = req.headers[tokenHeader] as string | undefined;
     const clientName = req.headers['x-client-name'] as string | undefined;
 
-    if (!await this.isAuthorizedDevice(deviceToken) || !this.isClientAllowed(clientName)) {
+    if (!await DetectPlatform.isAuthorizedDevice(this.options, deviceToken) || !DetectPlatform.isClientAllowed(this.options, clientName)) {
       throw new ForbiddenException('Access denied: untrusted client or device');
     }
 
     if (this.options.allowedPlatforms === '*') return true;
 
     const p: IAllowedPlatforms = this.options.allowedPlatforms;
-    const browsers = {
+
+    const browsers: Record<Browser, boolean> = {
       chrome: ua.isChrome,
       firefox: ua.isFirefox,
       safari: ua.isSafari,
@@ -108,7 +64,7 @@ export class RequestProtectorGuard implements CanActivate {
       epiphany: ua.isEpiphany,
     };
 
-    const mobiles = {
+    const mobiles: Record<Mobile, boolean> = {
       iphone: ua.isiPhone,
       ipod: ua.isiPod,
       ipad: ua.isiPad,
@@ -121,12 +77,14 @@ export class RequestProtectorGuard implements CanActivate {
       silk: ua.isSilk,
     };
 
-    const tablets = {
+    const tablets: Record<Tablet, boolean> = {
       ipad: ua.isiPad,
       androidtablet: ua.isAndroidTablet,
+      kindle: ua.isKindle,
+      windowstablet: ua.isWindowsTablet,
     };
 
-    const desktops = {
+    const desktops: Record<Desktop, boolean> = {
       windows: ua.isWindows,
       mac: ua.isMac,
       linux: ua.isLinux || ua.isLinux64,
@@ -134,24 +92,83 @@ export class RequestProtectorGuard implements CanActivate {
       raspberry: ua.isRaspberry,
     };
 
-    const scripts = {
+    const scripts: Record<Scripts, boolean> = {
       curl: ua.isCurl,
       wget: ua.isWget,
-      axios: ua.isAxios,
-      nodefetch: ua.isNodeFetch,
-      pythonrequests: ua.isPythonRequests,
+      postman: ua.isPostman,
+      httpie: ua.isHttpie,
       powershell: ua.isPowerShell,
-    }
+      java: ua.isJava,
+      'go-http-client': ua.isGoHttp,
+      php: ua.isPHP,
+      ruby: ua.isRuby,
+      perl: ua.isPerl,
+      'python-requests': ua.isPythonRequests,
+      'python-httpx': ua.isPythonHttpx,
+      urllib: ua.isUrllib,
+      aiohttp: ua.isAiohttp,
+      axios: ua.isAxios,
+      'node-fetch': ua.isNodeFetch,
+      superagent: ua.isSuperagent,
+      got: ua.isGot,
+      okhttp: ua.isOkHttp,
+      'apache-httpclient': ua.isApacheHttpClient,
+      unity: ua.isUnity,
+    };
 
-    const browserAllowed = this.checkAllow(p.browser, browsers);
-    const mobileAllowed = this.checkAllow(p.mobile, mobiles, ua.isMobile);
-    const tabletAllowed = this.checkAllow(p.tablet, tablets);
-    const desktopAllowed = this.checkAllow(p.desktop, desktops);
-    const scriptsAllowed = this.checkAllow(p.scripts, scripts);
+    const bots: Record<Bots, boolean> = {
+      googlebot: ua.isGoogleBot,
+      bingbot: ua.isBingBot,
+      duckduckbot: ua.isDuckDuckBot,
+      yandexbot: ua.isYandexBot,
+      facebookbot: ua.isFacebookBot,
+      slackbot: ua.isSlackBot,
+      telegrambot: ua.isTelegramBot,
+      twitterbot: ua.isTwitterBot,
+      linkedinbot: ua.isLinkedInBot,
+      pinterestbot: ua.isPinterestBot,
+      'yahoo-slurp': ua.isYahooSlurp,
+      baiduspider: ua.isBaiduSpider,
+      exabot: ua.isExaBot,
+      ahrefsbot: ua.isAhrefsBot,
+      semrushbot: ua.isSemrushBot,
+      accoona: ua.isAccoonaBot,
+      gptbot: ua.isGptBot,
+      'oai-searchbot': ua.isOaiSearchBot,
+      'chatgpt-user': ua.isChatGptUser,
+      whatsappbot: ua.isWhatsAppBot,
+      applebot: ua.isAppleBot,
+      discordbot: ua.isDiscordBot,
+    };
 
+    const gadgets: Record<SmartGadgets, boolean> = {
+      alexa: ua.isAlexa,
+      googlehome: ua.isGoogleHome,
+      echo: ua.isAlexa,
+      nest: ua.isGoogleHome,
+      smarthub: ua.isSmartHub,
+      iot: ua.isSmartHub,
+    };
+
+    const consoles: Record<GameConsoles, boolean> = {
+      playstation: ua.isPlayStation,
+      ps5: ua.isPlayStation,
+      ps4: ua.isPlayStation,
+      xbox: ua.isXbox,
+      nintendo: ua.isNintendo,
+      switch: ua.isNintendo,
+      wii: ua.isNintendo,
+    };
+
+    const browserAllowed = DetectPlatform.checkAllow(p.browser, browsers);
+    const mobileAllowed = DetectPlatform.checkAllow(p.mobile, mobiles, ua.isMobile);
+    const tabletAllowed = DetectPlatform.checkAllow(p.tablet, tablets);
+    const desktopAllowed = DetectPlatform.checkAllow(p.desktop, desktops);
+    const scriptsAllowed = DetectPlatform.checkAllow(p.scripts, scripts);
+    const botsAllowed = DetectPlatform.checkAllow(p.bots, bots, ua.isBot);
+    const smartGadgetsAllowed = DetectPlatform.checkAllow(p.smartGadgets, gadgets);
+    const gameConsolesAllowed = DetectPlatform.checkAllow(p.gameConsoles, consoles);
     const smartTVAllowed = !!p.smartTV && ua.isSmartTV;
-    const botsAllowed = !!p.bots && ua.isBot;
-
     const customsAllowed =
       p.customs?.some(c => c && uaSource.includes(c.toLowerCase())) ?? false;
 
@@ -163,9 +180,11 @@ export class RequestProtectorGuard implements CanActivate {
       !smartTVAllowed &&
       !botsAllowed &&
       !scriptsAllowed &&
+      !smartGadgetsAllowed &&
+      !gameConsolesAllowed &&
       !customsAllowed
     ) {
-      throw new ForbiddenException('Access denied: unauthorized client');
+      throw new ForbiddenException('Access denied: unauthorized or unsupported client');
     }
 
     return true;
