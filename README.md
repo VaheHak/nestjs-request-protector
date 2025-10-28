@@ -185,9 +185,8 @@ const options: RequestProtectorOptions = {
 
 ## ⚙️ Behavior Notes
 
-- If `allowedPlatforms === '*'`, all platforms are allowed.
-- If `allowedClients === '*'` or `allowedDeviceTokens === '*'`, all clients/tokens are accepted.
-- Both `allowedClients` **and** `allowedDeviceTokens` are checked before platform detection.
+- If `allowedPlatforms === '*'` or `allowedClients === '*'` or `allowedDeviceTokens === '*'`, all platforms/clients/tokens are accepted.
+- Both `allowedDeviceTokens` **and** `allowedPlatforms` are checked before client detection.
 - Scripts like `curl`, `axios`, or `wget` are automatically blocked unless `scripts: true`.
 - `customs` allows substring matching inside User-Agent (case-insensitive).
 
@@ -213,30 +212,30 @@ If `allowedDeviceTokens` is `'*'`, all tokens are accepted.
 
 #### ✅ Allow everything
 ```ts
-allowedPlatforms: '*',
-allowedClients: '*',
-allowedDeviceTokens: '*',
+allowedPlatforms: '*'
+allowedClients: '*'
+allowedDeviceTokens: '*'
 ```
 
 #### ✅ Allow specific browsers only
 ```ts
 allowedPlatforms: {
-  browser: ['chrome', 'firefox'],
+    browser: ['chrome', 'firefox']
 }
 ```
 
 #### ✅ Allow custom trusted UA
 ```ts
 allowedPlatforms: {
-  customs: ['myiotdevice'],
+    customs: ['myiotdevice']
 }
 ```
 
 #### ✅ Allow bots or scripts (for monitoring)
 ```ts
 allowedClients: {
-  bots: true,
-  scripts: true,
+    bots: true
+    scripts: true
 }
 ```
 
