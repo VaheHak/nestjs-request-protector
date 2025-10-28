@@ -5,10 +5,10 @@ import {
   Inject,
   Injectable,
 } from '@nestjs/common';
-import * as useragent from 'express-useragent';
 import {Request} from 'express';
-import {RequestProtectorOptions,} from './interfaces/request-protector-options.interface';
+import * as useragent from 'express-useragent';
 import {DetectAllowed} from './heplers/detect-allowed';
+import {RequestProtectorOptions,} from './interfaces/request-protector-options.interface';
 import {IAllowedClients, IAllowedPlatforms} from "./interfaces/request-protector-platforms.interface";
 
 export const REQUEST_PROTECTOR_OPTIONS = 'REQUEST_PROTECTOR_OPTIONS';
