@@ -161,7 +161,6 @@ const options: RequestProtectorOptions = {
 
 | **Category** | **Type** | **Supported Keywords** | **Description** |
 |--------------|-----------|------------------------|------------------|
-| 🧭 **browser** | `boolean` / `Browser[]` | chrome, firefox, safari, edge, opera, ie, konqueror, omniweb, seamonkey, flock, amaya, epiphany | Web browsers |
 | 📱 **mobile** | `boolean` / `Mobile[]` | iphone, ipod, ipad, android, androidtablet, windowsphone, bada, samsung, kindlefire, silk | Mobile devices |
 | 💻 **tablet** | `boolean` / `Tablet[]` | ipad, androidtablet, kindle, windowstablet | Tablet devices |
 | 🖥 **desktop** | `boolean` / `Desktop[]` | windows, mac, linux, chromeos, raspberry | Desktop & laptop OS |
@@ -176,7 +175,7 @@ const options: RequestProtectorOptions = {
 
 | **Category** | **Type** | **Supported Keywords** | **Description** |
 |--------------|-----------|------------------------|------------------|
-| 🌐 **browser** | `boolean` / `Browser[]` | Same as above | Allowed browsers |
+| 🌐 **browser** | `boolean` / `Browser[]` | chrome, firefox, safari, edge, opera, ie, konqueror, omniweb, seamonkey, flock, amaya, epiphany | Web browsers |
 | ⚙️ **scripts** | `boolean` / `Scripts[]` | curl, wget, postman, httpie, powershell, java, go-http-client, php, ruby, perl, python-requests, python-httpx, urllib, aiohttp, axios, node-fetch, superagent, got, okhttp, apache-httpclient, unity | Command-line tools or libraries |
 | 🤖 **bots** | `boolean` / `Bots[]` | googlebot, bingbot, duckduckbot, yandexbot, telegrambot, facebookbot, whatsappbot, discordbot, slackbot, linkedinbot, twitterbot, applebot, pinterestbot, yahoo-slurp, baiduspider, exabot, ahrefsbot, semrushbot, accoona, gptbot, oai-searchbot, chatgpt-user | Crawlers, social bots, AI agents |
 | 📲 **apps** | `boolean` / `Apps[]` | telegram, instagram, facebook, messenger, whatsapp, tiktok, discord, slack, spotify, electron, zoom, skype, viber, youtube, googleapp, googleassistant, gmail, googledrive, googlephotos, googlecalendar, googleplay, googlemaps | Native or desktop applications |
