@@ -1,6 +1,6 @@
 {
   "name": "nestjs-request-protector",
-  "version": "1.2.2",
+  "version": "1.2.3",
   "author": "Vahe Hakobyan",
   "description": "A configurable NestJS guard to block unauthorized API requests (Postman, curl, etc.)",
   "main": "dist/index.js",
