@@ -1,12 +1,18 @@
 import {
-  IBot,
-  IGadget,
-  IScript,
-  ITablet,
-  RequestProtectorOptions
+  Apps,
+  Bots,
+  Browser,
+  Desktop,
+  GameConsoles,
+  Mobile,
+  RequestProtectorOptions,
+  Scripts,
+  SmartGadgets,
+  Tablet
 } from "../interfaces/request-protector-options.interface";
+import {IApps, IBot, IGadget, IScript, ITablet} from "../interfaces/request-protector-platforms.interface";
 
-export class DetectPlatform {
+export class DetectAllowed {
   static detectTablets(uaString: string): ITablet {
     const ua = uaString.toLowerCase();
 
@@ -87,14 +93,58 @@ export class DetectPlatform {
     };
   }
 
-  static checkAllow<T extends Record<string, boolean>>(
+  static detectApps(uaString: string): IApps {
+    const ua = uaString.toLowerCase();
+
+    return {
+      isTelegram: ua.includes('telegram'),
+      isInstagram: ua.includes('instagram'),
+      isFacebook: ua.includes('facebook'),
+      isMessenger: ua.includes('messenger'),
+      isWhatsApp: ua.includes('whatsapp'),
+      isTikTok: ua.includes('tiktok') || ua.includes('musically'),
+      isDiscord: ua.includes('discord'),
+      isSlack: ua.includes('slack'),
+      isSpotify: ua.includes('spotify'),
+      isElectron: ua.includes('electron'),
+      isZoom: ua.includes('zoom'),
+      isSkype: ua.includes('skype'),
+      isViber: ua.includes('viber'),
+      isYouTube: ua.includes('youtube'),
+      isGoogleApp: ua.includes('googleapp') || ua.includes('gsa') || ua.includes('com.google.android'),
+      isGoogleAssistant: ua.includes('googleassistant'),
+      isGmail: ua.includes('gmail'),
+      isGoogleDrive: ua.includes('googledrive') || ua.includes('drive'),
+      isGooglePhotos: ua.includes('googlephotos'),
+      isGoogleCalendar: ua.includes('googlecalendar'),
+      isGooglePlay: ua.includes('googleplay') || ua.includes('playstore'),
+      isGoogleMaps: ua.includes('googlemaps'),
+    };
+  }
+
+  static checkAllow<
+    T extends | Record<Browser, boolean>
+      | Record<Mobile, boolean>
+      | Record<Tablet, boolean>
+      | Record<Desktop, boolean>
+      | Record<Scripts, boolean>
+      | Record<Bots, boolean>
+      | Record<SmartGadgets, boolean>
+      | Record<GameConsoles, boolean>
+      | Record<Apps, boolean>
+  >(
     setting: boolean | string[] | undefined,
     values: T,
     isAllowed?: boolean
   ): boolean {
+    if (!setting) return false
+
     if (setting === true) return isAllowed === true || Object.values(values).some(Boolean);
-    if (Array.isArray(setting))
-      return setting.some(k => values[k.toLowerCase() as keyof T]);
+
+    if (Array.isArray(setting)) {
+      return setting.some(k => Boolean(values[k.toLowerCase() as keyof T]));
+    }
+
     return false;
   }
 
@@ -115,13 +165,5 @@ export class DetectPlatform {
     }
 
     return typeof deviceToken === 'string' && allowedTokens.includes(deviceToken);
-  }
-
-  static isClientAllowed(options: RequestProtectorOptions, clientName?: string): boolean {
-    if (!options.allowedClients || options.allowedClients === '*') {
-      return true;
-    }
-
-    return !!clientName && options.allowedClients.includes(clientName);
   }
 }

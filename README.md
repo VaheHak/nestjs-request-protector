@@ -10,12 +10,8 @@
 
 # 🛡️ NestJS Request Protector Guard
 
-A flexible **NestJS Guard** that blocks unauthorized or automated API requests based on:
-- Allowed **clients** via header (`x-client-name`)
-- Allowed **device tokens**
-- User-Agent / platform detection using [`express-useragent`](https://www.npmjs.com/package/express-useragent)
-- Support for `*` (allow all) configuration for quick bypass
-- Detection of script clients (`curl`, `wget`, `axios`, `python-requests`, etc.)
+A powerful **NestJS Guard** that protects your API from unauthorized, scripted, or automated requests.  
+It validates **clients**, **devices**, and **platforms** using `User-Agent` analysis powered by [`express-useragent`](https://www.npmjs.com/package/express-useragent).
 
 ---
 
@@ -27,9 +23,20 @@ npm install nestjs-request-protector
 
 ---
 
+## ⚙ Features
+
+- ✅ Block non-browser and script-based requests (`curl`, `wget`, `axios`, etc.)
+- 🔐 Allow only trusted devices via `x-device-token` or `<custom key>` 
+- 📱 Detect devices: browser, desktop, mobile, tablet, console, IoT
+- 🤖 Detect bots (Googlebot, ChatGPT, TelegramBot, etc.)
+- 🧩 Support for `*` wildcard (allow all)
+- 🧠 Customizable rules for both **platforms** and **clients**
+
+---
+
 ## ⚙️ Setup Options
 
-### 🧩 1️⃣ Register globally using `.forRoot()` (recommended)
+### 1️⃣ Global Registration (Recommended)
 
 ```ts
 import { Module } from '@nestjs/common';
@@ -38,27 +45,25 @@ import { RequestProtectorModule, RequestProtectorGuard, RequestProtectorOptions 
 
 const protectorOptions: RequestProtectorOptions = {
   allowedDeviceTokens: ['device123', 'device456'],
-  allowedClients: ['MyTrustedApp', 'SmartHomeClient'],
-  allowedPlatforms: {
+  allowedClients: {
     browser: ['chrome', 'firefox', 'safari'],
+    scripts: false,
+    bots: ['googlebot', 'telegrambot'],
+  },
+  allowedPlatforms: {
     desktop: true,
     mobile: false,
     smartTV: false,
-    bots: false,
-    scripts: false,
-    customs: ['internalmonitor'],
+    smartGadgets: ['alexa', 'googlehome'],
+    gameConsoles: ['playstation', 'xbox'],
+    customs: ['internal-monitor'],
   },
 };
 
 @Module({
-  imports: [
-    RequestProtectorModule.forRoot(protectorOptions), // ✅ injects options globally
-  ],
+  imports: [RequestProtectorModule.forRoot(protectorOptions)],
   providers: [
-    {
-      provide: APP_GUARD,
-      useClass: RequestProtectorGuard, // ✅ activates globally
-    },
+    { provide: APP_GUARD, useClass: RequestProtectorGuard },
   ],
 })
 export class AppModule {}
@@ -66,31 +71,24 @@ export class AppModule {}
 
 ---
 
-### 🧩 2️⃣ Register globally using `useClass`
-
-This approach allows **dependency injection** for your configuration.
+### 2️⃣ Using `useClass`
 
 ```ts
 import { Module } from '@nestjs/common';
 import { APP_GUARD } from '@nestjs/core';
-import { RequestProtectorGuard, RequestProtectorOptions, REQUEST_PROTECTOR_OPTIONS } from 'nestjs-request-protector';
+import { RequestProtectorGuard, REQUEST_PROTECTOR_OPTIONS, RequestProtectorOptions } from 'nestjs-request-protector';
 
-const requestProtectorOptions: RequestProtectorOptions = {
-  allowedDeviceTokens: ['secure123'],
-  allowedClients: ['InternalApp'],
-  allowedPlatforms: {
-    browser: true,
-    mobile: false,
-    bots: false,
-    scripts: false,
-  },
+const protectorOptions: RequestProtectorOptions = {
+  allowedDeviceTokens: ['secure-token'],
+  allowedClients: '*',
+  allowedPlatforms: '*',
 };
 
 @Module({
   providers: [
     {
       provide: REQUEST_PROTECTOR_OPTIONS,
-      useValue: requestProtectorOptions,
+      useValue: protectorOptions,
     },
     {
       provide: APP_GUARD,
@@ -103,30 +101,25 @@ export class AppModule {}
 
 ---
 
-### 🧩 3️⃣ Register globally using `useFactory`
-
-This is simplest when options are static and you don’t need DI.
+### 3️⃣ Using `useFactory`
 
 ```ts
-import { Module } from '@nestjs/common';
-import { APP_GUARD } from '@nestjs/core';
-import { RequestProtectorGuard, RequestProtectorOptions } from 'nestjs-request-protector';
-
-const requestProtectorOptions: RequestProtectorOptions = {
-  allowedDeviceTokens: ['device123', 'device456'],
-  allowedClients: ['MyTrustedApp'],
-  allowedPlatforms: {
-    browser: ['chrome', 'firefox'],
-    desktop: true,
-    mobile: false,
-  },
-};
-
 @Module({
   providers: [
     {
       provide: APP_GUARD,
-      useFactory: () => new RequestProtectorGuard(requestProtectorOptions),
+      useFactory: () =>
+        new RequestProtectorGuard({
+          allowedDeviceTokens: '*',
+          allowedClients: {
+            browser: ['chrome', 'firefox'],
+            scripts: ['axios'],
+          },
+          allowedPlatforms: {
+            browser: ['chrome'],
+            desktop: true,
+          },
+        }),
     },
   ],
 })
@@ -135,47 +128,59 @@ export class AppModule {}
 
 ---
 
-## 🌍 Platform Detection (Full List)
-
-`allowedPlatforms` lets you control access by detected platform or User-Agent flags.
-
-| **Category**       | **Type**                     | **Supported Keywords**                                                                                                                                                                                                                                                                                      | **Description**                                                   |
-| ------------------ | ---------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------- |
-| 🧭**browser**      | `boolean` / `Browser[]`      | `chrome`, `firefox`, `safari`, `edge`, `opera`, `ie`, `konqueror`, `omniweb`, `seamonkey`, `flock`, `amaya`, `epiphany`                                                                                                                                                                                     | Controls which desktop or mobile browsers are allowed             |
-| 📱**mobile**       | `boolean` / `Mobile[]`       | `iphone`, `ipod`, `ipad`, `android`, `androidtablet`, `windowsphone`, `bada`, `samsung`, `kindlefire`, `silk`                                                                                                                                                                                               | Controls mobile or handheld devices                               |
-| 💻**tablet**       | `boolean` / `Tablet[]`       | `ipad`, `androidtablet`, `kindle`, `windowstablet`                                                                                                                                                                                                                                                          | Controls tablet devices                                           |
-| 🖥**desktop**      | `boolean` / `Desktop[]`      | `windows`, `mac`, `linux`, `chromeos`, `raspberry`                                                                                                                                                                                                                                                          | Controls desktop or laptop OS platforms                           |
-| 🧠**smartGadgets** | `boolean` / `SmartGadgets[]` | `alexa`, `googlehome`, `echo`, `nest`, `smarthub`, `iot`                                                                                                                                                                                                                                                    | Controls smart home and IoT devices (Alexa, Google Home, etc.)    |
-| 🎮**gameConsoles** | `boolean` / `GameConsoles[]` | `playstation`, `xbox`, `nintendo`, `switch`, `wii`, `ps5`, `ps4`                                                                                                                                                                                                                                            | Controls console-based access (PlayStation, Xbox, Nintendo, etc.) |
-| 🤖**bots**         | `boolean` / `Bots[]`         | `googlebot`, `bingbot`, `duckduckbot`, `yandexbot`, `telegrambot`, `facebookbot`, `whatsappbot`, `discordbot`, `slackbot`, `linkedinbot`, `twitterbot`, `applebot`, `pinterestbot`, `yahoo-slurp`, `baiduspider`, `exabot`, `ahrefsbot`, `semrushbot`, `accoona`, `gptbot`, `oai-searchbot`, `chatgpt-user` | Allows or blocks crawlers, social bots, or AI preview agents      |
-| ⚙️**scripts**      | `boolean` / `Scripts[]`      | `curl`, `wget`, `postman`, `httpie`, `powershell`, `java`, `go-http-client`, `php`, `ruby`, `perl`, `python-requests`, `python-httpx`, `urllib`, `aiohttp`, `axios`, `node-fetch`, `superagent`, `got`, `okhttp`, `apache-httpclient`, `unity`                                                              | Controls CLI tools and HTTP libraries                             |
-| 📺**smartTV**      | `boolean`                    | —                                                                                                                                                                                                                                                                                                           | Allow Smart TV devices                                            |
-| 🧩**customs**      | `string[]`                   | Any substring (e.g., `myiotclient`, `trustedapp`)                                                                                                                                                                                                                                                           | Add your own trusted clients or devices                           |
-
----
-
-## 🧩 Full Example Configuration
+## 🧩 Full Example
 
 ```ts
 const options: RequestProtectorOptions = {
-  allowedDeviceTokens: ['abc123', 'xyz789'],
-  fetchAllowedTokens: async () => ['dynamicToken'],
-  deviceTokenHeader: 'x-device-token',
-  allowedClients: ['MyApp', 'InternalMonitor'],
-  allowedPlatforms: {
-    browser: ['chrome', 'firefox'],
-    mobile: false,
-    tablet: ['ipad'],
-    desktop: true,
-    smartTV: false,
-    bots: false,
-    scripts: false,
-    gameConsoles: false,
-    smartGadgets: false,
-    customs: ['trustedclient'],
+  allowedDeviceTokens: ['abc123'],
+  fetchAllowedTokens: async () => ['tokenFromDB'],
+  allowedClients: {
+    browser: true,
+    bots: ['googlebot', 'telegrambot', 'chatgpt-user'],
+    scripts: ['postman'],
+    apps: ['messenger'],
+    customs: ['iot']
   },
+  allowedPlatforms: {
+    desktop: ['mac', 'windows'],
+    mobile: true,
+    smartGadgets: ['alexa'],
+    gameConsoles: ['playstation', 'xbox'],
+    smartTV: true,
+    tablet: true,
+    customs: ['postman'],
+  }
 };
 ```
+
+---
+
+## 🌍 Platform or Client Detection (Full List)
+
+🖥️ `allowedPlatforms` lets you control access by detected platform or User-Agent flags.
+
+| **Category** | **Type** | **Supported Keywords** | **Description** |
+|--------------|-----------|------------------------|------------------|
+| 🧭 **browser** | `boolean` / `Browser[]` | chrome, firefox, safari, edge, opera, ie, konqueror, omniweb, seamonkey, flock, amaya, epiphany | Web browsers |
+| 📱 **mobile** | `boolean` / `Mobile[]` | iphone, ipod, ipad, android, androidtablet, windowsphone, bada, samsung, kindlefire, silk | Mobile devices |
+| 💻 **tablet** | `boolean` / `Tablet[]` | ipad, androidtablet, kindle, windowstablet | Tablet devices |
+| 🖥 **desktop** | `boolean` / `Desktop[]` | windows, mac, linux, chromeos, raspberry | Desktop & laptop OS |
+| 🧠 **smartGadgets** | `boolean` / `SmartGadgets[]` | alexa, googlehome, echo, nest, smarthub, iot | IoT & smart devices |
+| 🎮 **gameConsoles** | `boolean` / `GameConsoles[]` | playstation, xbox, nintendo, switch, wii, ps5, ps4 | Gaming consoles |
+| 📺 **smartTV** | `boolean` | — | Smart TVs |
+| 🧩 **customs** | `string[]` | custom UA substrings | Custom rules |
+
+---
+
+🤝 `allowedClients` lets you control access by detected clients or User-Agent flags.
+
+| **Category** | **Type** | **Supported Keywords** | **Description** |
+|--------------|-----------|------------------------|------------------|
+| 🌐 **browser** | `boolean` / `Browser[]` | Same as above | Allowed browsers |
+| ⚙️ **scripts** | `boolean` / `Scripts[]` | curl, wget, postman, httpie, powershell, java, go-http-client, php, ruby, perl, python-requests, python-httpx, urllib, aiohttp, axios, node-fetch, superagent, got, okhttp, apache-httpclient, unity | Command-line tools or libraries |
+| 🤖 **bots** | `boolean` / `Bots[]` | googlebot, bingbot, duckduckbot, yandexbot, telegrambot, facebookbot, whatsappbot, discordbot, slackbot, linkedinbot, twitterbot, applebot, pinterestbot, yahoo-slurp, baiduspider, exabot, ahrefsbot, semrushbot, accoona, gptbot, oai-searchbot, chatgpt-user | Crawlers, social bots, AI agents |
+| 📲 **apps** | `boolean` / `Apps[]` | telegram, instagram, facebook, messenger, whatsapp, tiktok, discord, slack, spotify, electron, zoom, skype, viber, youtube, googleapp, googleassistant, gmail, googledrive, googlephotos, googlecalendar, googleplay, googlemaps | Native or desktop applications |
+| 🧩 **customs** | `string[]` | Any substring | Custom client matchers |
 
 ---
 
@@ -205,23 +210,6 @@ If `allowedDeviceTokens` is `'*'`, all tokens are accepted.
 
 ---
 
-### 🤝 Allowed Clients
-
-Set `allowedClients` to define which apps can access the API.
-
-Example:
-```ts
-allowedClients: ['MyTrustedApp']
-```
-```http
-GET /api/data
-x-client-name: MyTrustedApp
-```
-
-If `allowedClients` is `'*'`, all client names are accepted.
-
----
-
 ### 🧩 Examples
 
 #### ✅ Allow everything
@@ -235,7 +223,6 @@ allowedDeviceTokens: '*',
 ```ts
 allowedPlatforms: {
   browser: ['chrome', 'firefox'],
-  desktop: true,
 }
 ```
 
@@ -248,7 +235,7 @@ allowedPlatforms: {
 
 #### ✅ Allow bots or scripts (for monitoring)
 ```ts
-allowedPlatforms: {
+allowedClients: {
   bots: true,
   scripts: true,
 }
@@ -264,22 +251,12 @@ fetchAllowedTokens: async () => {
 
 ---
 
-### ⚠️ Behavior Notes
-
-- If `allowedPlatforms === '*'`, all platforms are allowed.
-- `allowedClients` and `allowedDeviceTokens` are still checked first — both must pass.
-- If `allowedPlatforms` is an object, at least one matching condition must be `true`.
-- Scripts like `curl`, `axios`, or `wget` are automatically detected and blocked unless `scripts: true`.
-
----
-
 ## 🧱 Example Request Flow
 
 ✅ Allowed:
 ```http
 GET /api/data
 x-device-token: device123
-x-client-name: MyTrustedApp
 User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/122.0
 ```
 
@@ -287,7 +264,6 @@ User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/122.0
 ```http
 GET /api/data
 x-device-token: invalidToken
-x-client-name: OtherApp
 User-Agent: curl/8.0
 ```
 
@@ -301,13 +277,14 @@ User-Agent: PostmanRuntime/7.49.0
 
 ## ⚙️ Optional Flags
 
-| Option | Type | Description |
-|---------|------|-------------|
-| `allowedPlatforms` | `'*' | IAllowedPlatforms` | Control platform-level filtering |
-| `allowedDeviceTokens` | `string[] | '*'` | Static tokens allowed |
-| `fetchAllowedTokens` | `() => Promise<string[]>` | Dynamically fetch allowed tokens |
-| `deviceTokenHeader` | `string` | Custom header name for token |
-| `allowedClients` | `string[] | '*'` | Allow specific client apps |
+| Rule | Description |
+|------|--------------|
+| `allowedDeviceTokens` | Must match header token (or be `*` to allow all) |
+| `fetchAllowedTokens` | Async dynamic token fetch support |
+| `allowedClients` | Controls app/browser/script access |
+| `allowedPlatforms` | Controls device or OS access |
+| `'*'` (wildcard) | Allows everything for that rule |
+| `customs` | Partial case-insensitive match on UA |
 
 ---
 
