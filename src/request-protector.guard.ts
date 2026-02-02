@@ -6,7 +6,7 @@ import {
   Injectable,
 } from '@nestjs/common';
 import {Request} from 'express';
-import * as useragent from 'express-useragent';
+import useragent from 'express-useragent';
 import {DetectAllowed} from './heplers/detect-allowed';
 import {RequestProtectorOptions,} from './interfaces/request-protector-options.interface';
 import {IAllowedClients, IAllowedPlatforms} from "./interfaces/request-protector-platforms.interface";
