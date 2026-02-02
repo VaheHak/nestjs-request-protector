@@ -1,6 +1,6 @@
 {
   "name": "nestjs-request-protector",
-  "version": "1.2.5",
+  "version": "1.2.6",
   "author": "Vahe Hakobyan",
   "description": "A configurable NestJS guard to block unauthorized API requests (Postman, curl, etc.)",
   "main": "dist/index.js",
@@ -32,14 +32,14 @@
     "url": "https://github.com/VaheHak/nestjs-request-protector.git"
   },
   "dependencies": {
-    "express-useragent": "^1.0.15"
+    "express-useragent": "^2.1.0"
   },
   "peerDependencies": {
-    "@nestjs/common": "^10.0.0",
-    "express": "^4.0.0"
+    "@nestjs/common": "^11.1.12",
+    "express": "^5.2.1"
   },
   "devDependencies": {
-    "@types/express": "^5.0.4",
+    "@types/express": "^5.0.6",
     "@types/express-useragent": "^1.0.5",
     "typescript": "^5.9.3"
   }

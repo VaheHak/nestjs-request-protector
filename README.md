@@ -1,5 +1,5 @@
 ![](https://img.shields.io/npm/v/nestjs-request-protector.svg)
-![](https://img.shields.io/npm/dt/nestjs-request-protector.svg)
+![](https://img.shields.io/npm/dy/nestjs-request-protector.svg)
 ![](https://img.shields.io/npm/l/nestjs-request-protector.svg)
 ![](https://img.shields.io/github/issues/VaheHak/nestjs-request-protector.svg)
 ![](https://img.shields.io/github/contributors/VaheHak/nestjs-request-protector.svg)
