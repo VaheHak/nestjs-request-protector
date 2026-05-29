@@ -9,6 +9,13 @@
 # build output
 /dist
 /build
+*.tsbuildinfo
+
+# test / coverage
+/coverage
+/.nyc_output
+*.lcov
+junit.xml
 
 # environment
 .env

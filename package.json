@@ -1,16 +1,37 @@
 {
   "name": "nestjs-request-protector",
-  "version": "1.2.6",
+  "version": "1.3.0",
   "author": "Vahe Hakobyan",
   "description": "A configurable NestJS guard to block unauthorized API requests (Postman, curl, etc.)",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "require": "./dist/index.js",
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
   "license": "MIT",
   "scripts": {
-    "build": "tsc"
+    "build": "tsc --project tsconfig.json",
+    "build:check": "tsc --project tsconfig.json --noEmit",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint \"src/**/*.ts\" \"tests/**/*.ts\"",
+    "lint:fix": "eslint \"src/**/*.ts\" \"tests/**/*.ts\" --fix",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:cov": "jest --coverage",
+    "test:ci": "jest --ci --coverage --runInBand",
+    "prepublishOnly": "npm run lint && npm test && npm run build:check && npm run build"
   },
   "engines": {
-    "node": ">=16.0.0"
+    "node": ">=18.0.0"
   },
   "keywords": [
     "nestjs",
@@ -21,7 +42,9 @@
     "security",
     "nestjs-security",
     "nestjs-guard",
-    "nestjs-request-protector"
+    "nestjs-request-protector",
+    "rate-limit",
+    "bot-detection"
   ],
   "bugs": {
     "url": "https://github.com/VaheHak/nestjs-request-protector/issues"
@@ -35,12 +58,20 @@
     "express-useragent": "^2.1.0"
   },
   "peerDependencies": {
-    "@nestjs/common": "^11.1.12",
-    "express": "^5.2.1"
+    "@nestjs/common": ">=9.0.0",
+    "express": ">=4.0.0"
   },
   "devDependencies": {
+    "@eslint/js": "^9.13.0",
+    "@nestjs/common": "^11.1.12",
     "@types/express": "^5.0.6",
     "@types/express-useragent": "^1.0.5",
-    "typescript": "^5.9.3"
+    "@types/jest": "^29.5.12",
+    "@types/node": "^20.11.0",
+    "eslint": "^9.13.0",
+    "jest": "^29.7.0",
+    "ts-jest": "^29.1.2",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.12.0"
   }
 }

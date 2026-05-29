@@ -15,6 +15,31 @@ It validates **clients**, **devices**, and **platforms** using `User-Agent` anal
 
 ---
 
+<a id="toc"></a>
+## 📚 Table of Contents
+
+- [🚀 Installation](#installation)
+- [⚙ Features](#features)
+- [⚙️ Setup Options](#setup-options)
+  - [1️⃣ Global Registration (Recommended)](#setup-global)
+  - [2️⃣ Using `useClass`](#setup-useclass)
+  - [3️⃣ Using `useFactory`](#setup-usefactory)
+- [🧩 Full Example](#full-example)
+- [🌍 Platform or Client Detection (Full List)](#detection)
+- [⚙️ Behavior Notes](#behavior-notes)
+- [🚦 IP & User-Agent Whitelist / Blacklist](#whitelist-blacklist)
+  - [Evaluation order](#evaluation-order)
+  - [Notes](#whitelist-notes)
+- [🧠 How It Works](#how-it-works)
+  - [🔐 Device Token Validation](#device-token-validation)
+  - [🧩 Examples](#examples)
+- [🧱 Example Request Flow](#example-request-flow)
+- [⚙️ Optional Flags](#optional-flags)
+- [📜 License](#license)
+
+---
+
+<a id="installation"></a>
 ## 🚀 Installation
 
 ```bash
@@ -23,6 +48,7 @@ npm install nestjs-request-protector
 
 ---
 
+<a id="features"></a>
 ## ⚙ Features
 
 - ✅ Block non-browser and script-based requests (`curl`, `wget`, `axios`, etc.)
@@ -34,8 +60,10 @@ npm install nestjs-request-protector
 
 ---
 
+<a id="setup-options"></a>
 ## ⚙️ Setup Options
 
+<a id="setup-global"></a>
 ### 1️⃣ Global Registration (Recommended)
 
 ```ts
@@ -71,6 +99,7 @@ export class AppModule {}
 
 ---
 
+<a id="setup-useclass"></a>
 ### 2️⃣ Using `useClass`
 
 ```ts
@@ -101,6 +130,7 @@ export class AppModule {}
 
 ---
 
+<a id="setup-usefactory"></a>
 ### 3️⃣ Using `useFactory`
 
 ```ts
@@ -128,6 +158,7 @@ export class AppModule {}
 
 ---
 
+<a id="full-example"></a>
 ## 🧩 Full Example
 
 ```ts
@@ -155,6 +186,7 @@ const options: RequestProtectorOptions = {
 
 ---
 
+<a id="detection"></a>
 ## 🌍 Platform or Client Detection (Full List)
 
 🖥️ `allowedPlatforms` lets you control access by detected platform or User-Agent flags.
@@ -183,6 +215,7 @@ const options: RequestProtectorOptions = {
 
 ---
 
+<a id="behavior-notes"></a>
 ## ⚙️ Behavior Notes
 
 - If `allowedPlatforms === '*'` or `allowedClients === '*'` or `allowedDeviceTokens === '*'`, all platforms/clients/tokens are accepted.
@@ -192,8 +225,68 @@ const options: RequestProtectorOptions = {
 
 ---
 
+<a id="whitelist-blacklist"></a>
+## 🚦 IP & User-Agent Whitelist / Blacklist
+
+In addition to platform/client matchers, the guard supports first-class
+**allow / deny lists** for IPs and User-Agents. They run **before** the
+expensive UA parsing, so denied traffic is rejected almost for free.
+
+```ts
+const options: RequestProtectorOptions = {
+  allowedClients: '*',
+
+  // ── IP rules ─────────────────────────────────────────────────────────────
+  // Exact IPv4/IPv6 or IPv4 CIDR blocks are supported.
+  ipBlacklist: ['203.0.113.7', '198.51.100.0/24'],
+  ipWhitelist: ['10.0.0.0/8', '192.168.1.0/24'],
+
+  // When running behind a load-balancer/CDN, tell the guard which header
+  // contains the original client IP. The first entry of a comma-separated
+  // list is used.
+  trustedProxyIpHeader: 'x-forwarded-for', // or 'cf-connecting-ip', etc.
+
+  // ── User-Agent rules ─────────────────────────────────────────────────────
+  // Each entry may be a case-insensitive substring or a RegExp.
+  userAgentBlacklist: ['EvilScanner', /^badbot/i],
+
+  // A match in `userAgentWhitelist` marks the request as *trusted* and skips
+  // the platform/client allow-list checks (token + IP checks still run).
+  userAgentWhitelist: ['MyInternalMonitor', /^uptime-robot\//i],
+};
+```
+
+<a id="evaluation-order"></a>
+### Evaluation order
+
+For every request the guard runs these checks, in order, and short-circuits on the first failure:
+
+1. `maxUserAgentLength` / `denyEmptyUserAgent`
+2. `ipBlacklist` → **deny** on match
+3. `ipWhitelist` → **deny** when set and *not* matched
+4. `userAgentBlacklist` → **deny** on match
+5. `userAgentWhitelist` → if matched, mark request as *trusted*
+6. `allowedDeviceTokens` (+ optional `fetchAllowedTokens`)
+7. `allowedPlatforms` / `allowedClients` — **skipped entirely** when the request is trusted
+
+<a id="whitelist-notes"></a>
+### Notes
+
+- **Blacklist always wins over whitelist** (both for IPs and UAs).
+- IPv4 CIDR is fully supported (e.g. `10.0.0.0/8`, `1.2.3.4/32`, `0.0.0.0/0`).
+  IPv6 must be matched exactly — open an issue if you need IPv6 CIDR.
+- `::ffff:1.2.3.4` (IPv4-mapped IPv6) is normalised to `1.2.3.4`, so a single
+  rule covers both forms.
+- Without `trustedProxyIpHeader`, the guard reads `req.ip` and then falls
+  back to `req.socket.remoteAddress`. Make sure Express's `trust proxy`
+  setting is configured if you rely on `req.ip`.
+
+---
+
+<a id="how-it-works"></a>
 ## 🧠 How It Works
 
+<a id="device-token-validation"></a>
 ### 🔐 Device Token Validation
 
 Requests must include a valid token if specified:
@@ -208,6 +301,7 @@ If `allowedDeviceTokens` is `'*'`, all tokens are accepted.
 
 ---
 
+<a id="examples"></a>
 ### 🧩 Examples
 
 #### ✅ Allow everything
@@ -249,6 +343,7 @@ fetchAllowedTokens: async () => {
 
 ---
 
+<a id="example-request-flow"></a>
 ## 🧱 Example Request Flow
 
 ✅ Allowed:
@@ -273,6 +368,7 @@ User-Agent: PostmanRuntime/7.49.0
 
 ---
 
+<a id="optional-flags"></a>
 ## ⚙️ Optional Flags
 
 | Rule | Description |
@@ -283,9 +379,20 @@ User-Agent: PostmanRuntime/7.49.0
 | `allowedPlatforms` | Controls device or OS access |
 | `'*'` (wildcard) | Allows everything for that rule |
 | `customs` | Partial case-insensitive match on UA |
+| `ipWhitelist` | Allow-list of exact IPs / IPv4 CIDR blocks |
+| `ipBlacklist` | Deny-list of exact IPs / IPv4 CIDR blocks (wins over whitelist) |
+| `userAgentWhitelist` | Substrings / RegExps that mark a request as trusted (skips client/platform checks) |
+| `userAgentBlacklist` | Substrings / RegExps that immediately deny a request |
+| `trustedProxyIpHeader` | Header (e.g. `x-forwarded-for`) used to read the real client IP behind a proxy |
+| `maxUserAgentLength` | Max accepted UA length (default `512`) |
+| `denyEmptyUserAgent` | Reject requests with no `User-Agent` header |
 
 ---
 
+<a id="license"></a>
 ## 📜 License
 
 MIT © 2025
+
+[⬆ Back to top](#toc)
+

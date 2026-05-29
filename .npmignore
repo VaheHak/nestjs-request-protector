@@ -6,5 +6,17 @@ tsconfig.json
 .github/
 .gitignore
 test-guard/
+coverage/
+.nyc_output/
+jest.config.js
+jest.config.ts
+*.test.ts
+*.spec.ts
+__tests__/
+tests/
+CONTRIBUTING.md
+eslint.config.js
+.eslintrc*
 
 !dist/**
+!dist/**/*.d.ts

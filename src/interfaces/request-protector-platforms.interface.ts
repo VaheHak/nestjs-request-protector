@@ -1,13 +1,13 @@
 import {
-  Apps,
-  Bots,
-  Browser,
-  Desktop,
-  GameConsoles,
-  Mobile,
-  Scripts,
-  SmartGadgets,
-  Tablet
+  type Apps,
+  type Bots,
+  type Browser,
+  type Desktop,
+  type GameConsoles,
+  type Mobile,
+  type Scripts,
+  type SmartGadgets,
+  type Tablet
 } from "./request-protector-options.interface";
 
 export interface IAllowedPlatforms {
